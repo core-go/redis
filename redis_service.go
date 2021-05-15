@@ -1,56 +1,56 @@
 package redis
 
 import (
-	"github.com/go-redis/redis"
+	"github.com/garyburd/redigo/redis"
 	"time"
 )
 
 type RedisService struct {
-	Client *redis.Client
+	Pool *redis.Pool
 }
 
 func NewRedisServiceByConfig(c Config) (*RedisService, error) {
-	client, err := NewRedisClientByConfig(c)
+	pool, err := NewRedisPoolByConfig(c)
 	if err != nil {
 		return nil, err
 	}
-	return &RedisService{client}, nil
+	return &RedisService{pool}, nil
 }
 func NewRedisService(redisUrl string) (*RedisService, error) {
-	client, err := NewRedisClient(redisUrl)
+	pool, err := NewRedisPool(redisUrl)
 	if err != nil {
 		return nil, err
 	}
-	return &RedisService{client}, nil
+	return &RedisService{pool}, nil
 }
 
 func (c *RedisService) Put(key string, obj interface{}, timeToLive time.Duration) error {
-	return Set(c.Client, key, obj, timeToLive)
+	return Set(c.Pool, key, obj, timeToLive)
 }
 
 func (c *RedisService) Expire(key string, timeToLive time.Duration) (bool, error) {
-	return Expire(c.Client, key, timeToLive)
+	return Expire(c.Pool, key, timeToLive)
 }
 
 func (c *RedisService) Get(key string) (interface{}, error) {
-	return Get(c.Client, key)
+	return Get(c.Pool, key)
 }
 
 func (c *RedisService) ContainsKey(key string) (bool, error) {
-	return Exists(c.Client, key)
+	return Exists(c.Pool, key)
 }
 
 func (c *RedisService) Remove(key string) (bool, error) {
-	return Delete(c.Client, key)
+	return Delete(c.Pool, key)
 }
 
 func (c *RedisService) Clear() error {
-	return Clear(c.Client)
+	return Clear(c.Pool)
 }
 
 func (c *RedisService) GetMany(keys []string) (map[string]interface{}, []string, error) {
 	m2 := make(map[string]interface{})
-	m, n, err := GetMany(c.Client, keys)
+	m, n, err := GetMany(c.Pool, keys)
 	if err != nil {
 		return m2, n, err
 	}
@@ -61,17 +61,17 @@ func (c *RedisService) GetMany(keys []string) (map[string]interface{}, []string,
 }
 
 func (c *RedisService) GetManyStrings(keys []string) (map[string]string, []string, error) {
-	return GetMany(c.Client, keys)
+	return GetMany(c.Pool, keys)
 }
 
 func (c *RedisService) Keys() ([]string, error) {
-	return Keys(c.Client)
+	return Keys(c.Pool)
 }
 
 func (c *RedisService) Count() (int64, error) {
-	return Count(c.Client)
+	return Count(c.Pool)
 }
 
 func (c *RedisService) Size() (int64, error) {
-	return Size(c.Client)
+	return Size(c.Pool)
 }

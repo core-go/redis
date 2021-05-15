@@ -2,60 +2,49 @@ package redis
 
 import (
 	"context"
-	"fmt"
-	"github.com/go-redis/redis"
+	"github.com/garyburd/redigo/redis"
 	"time"
 )
 
 type HealthChecker struct {
-	client  *redis.Client
-	name    string
-	timeout time.Duration
+	Pool    *redis.Pool
+	Service string
+	Timeout time.Duration
 }
 
-func NewRedisHealthChecker(db *redis.Client, name string, timeouts ...time.Duration) *HealthChecker {
+func NewRedisHealthChecker(pool *redis.Pool, name string, timeouts ...time.Duration) *HealthChecker {
 	var timeout time.Duration
 	if len(timeouts) >= 1 {
 		timeout = timeouts[0]
 	} else {
 		timeout = 4 * time.Second
 	}
-	return &HealthChecker{client: db, name: name, timeout: timeout}
+	return &HealthChecker{Pool: pool, Service: name, Timeout: timeout}
 }
 
-func NewHealthChecker(db *redis.Client, options ...string) *HealthChecker {
+func NewHealthChecker(pool *redis.Pool, options ...string) *HealthChecker {
 	var name string
 	if len(options) >= 1 && len(options[0]) > 0 {
 		name = options[0]
 	} else {
 		name = "redis"
 	}
-	return &HealthChecker{client: db, name: name, timeout: 4 * time.Second}
+	return &HealthChecker{Pool: pool, Service: name, Timeout: 4 * time.Second}
 }
 
 func (s *HealthChecker) Name() string {
-	return s.name
+	return s.Service
 }
 
 func (s *HealthChecker) Check(ctx context.Context) (map[string]interface{}, error) {
-	cancel := func() {}
-	if s.timeout > 0 {
-		ctx, cancel = context.WithTimeout(ctx, s.timeout)
-	}
-	defer cancel()
-
 	res := make(map[string]interface{})
-	checkerChan := make(chan error)
-	go func() {
-		_, err := s.client.Ping().Result()
-		checkerChan <- err
-	}()
-	select {
-	case err := <-checkerChan:
+	conn := s.Pool.Get()
+	defer conn.Close()
+	_, err := conn.Do("PING")
+	if err != nil {
 		return res, err
-	case <-ctx.Done():
-		return res, fmt.Errorf("timeout")
 	}
+	return res, nil
 }
 
 func (s *HealthChecker) Build(ctx context.Context, data map[string]interface{}, err error) map[string]interface{} {
