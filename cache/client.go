@@ -6,7 +6,6 @@ import (
 	"unsafe"
 )
 
-// LinearClient contains all attributes
 type Client struct {
 	items              sync.Map
 	keys               []string
@@ -97,9 +96,9 @@ func (c *Client) Take() (interface{}, error) {
 
 // Get method return the item by key from linear and remove it
 // Goroutine: https://stackoverflow.com/questions/20945069/catching-return-values-from-goroutines
-func (c *Client) Get(key string) (interface{}, error) {
+func (c *Client) Get(key string) (string, error) {
 	if c.IsEmpty() {
-		return nil, errors.New("linear is empty")
+		return "", errors.New("linear is empty")
 	}
 
 	var (
@@ -129,10 +128,10 @@ func (c *Client) Get(key string) (interface{}, error) {
 		c.keys = removeItemByIndex(c.keys, itemIndex) //Update keys slice after remove that key from items map
 		c.rwMutex.Unlock()
 
-		return item, nil
+		return item.(string), nil
 	}
 
-	return nil, nil
+	return "", nil
 }
 
 // Read method return the item by key from linear without remove it

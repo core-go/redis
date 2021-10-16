@@ -48,26 +48,25 @@ func NewMemoryCacheService(size int64, cleaningEnable bool, cleaningInterval tim
 }
 
 // Get return value based on the key provided
-func (c *MemoryCacheService) Get(ctx context.Context, key string) (interface{}, error) {
+func (c *MemoryCacheService) Get(ctx context.Context, key string) (string, error) {
 	obj, err := c.client.Read(key)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	item, ok := obj.(Item)
 	if !ok {
-		return nil, errors.New("can not map object to Item model")
+		return "", errors.New("can not map object to Item model")
 	}
 
 	if item.Expires < time.Now().UnixNano() {
-		return nil, nil
+		return "", nil
 	}
 
 	return item.Data, nil
 }
-
-func (c *MemoryCacheService) GetMany(ctx context.Context, keys []string) (map[string]interface{}, []string, error) {
-	var itemFound map[string]interface{}
+func (c *MemoryCacheService) GetMany(ctx context.Context, keys []string) (map[string]string, []string, error) {
+	var itemFound map[string]string
 	var itemNotFound []string
 
 	for _, key := range keys {
@@ -87,29 +86,6 @@ func (c *MemoryCacheService) GetMany(ctx context.Context, keys []string) (map[st
 	return itemFound, itemNotFound, nil
 }
 
-// Get return value based on the list of keys provided
-func (c *MemoryCacheService) GetManyStrings(ctx context.Context, keys []string) (map[string]string, []string, error) {
-	var itemFound map[string]string
-	var itemNotFound []string
-
-	for _, key := range keys {
-		obj, err := c.client.Read(key)
-		if obj == nil && err == nil {
-			itemNotFound = append(itemNotFound, key)
-		}
-
-		item, ok := obj.(Item)
-		if !ok {
-			return nil, nil, errors.New("can not map object to Item model")
-		}
-
-		itemFound[key] = item.Data.(string)
-	}
-
-	return itemFound, itemNotFound, nil
-}
-
-// Get return value based on the key provided
 func (c *MemoryCacheService) ContainsKey(ctx context.Context, key string) (bool, error) {
 	obj, err := c.client.Read(key)
 	if err != nil {
@@ -129,7 +105,7 @@ func (c *MemoryCacheService) ContainsKey(ctx context.Context, key string) (bool,
 }
 
 // Put new record set key and value
-func (c *MemoryCacheService) Put(ctx context.Context, key string, value interface{}, expire time.Duration) error {
+func (c *MemoryCacheService) Put(ctx context.Context, key string, value string, expire time.Duration) error {
 	if expire == 0 {
 		expire = 24 * time.Hour
 	}
