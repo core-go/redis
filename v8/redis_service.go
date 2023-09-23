@@ -32,7 +32,7 @@ func (c *RedisService) Expire(ctx context.Context, key string, timeToLive time.D
 	return Expire(ctx, c.Client, key, timeToLive)
 }
 
-func (c *RedisService) Get(ctx context.Context, key string) (interface{}, error) {
+func (c *RedisService) Get(ctx context.Context, key string) (string, error) {
 	return Get(ctx, c.Client, key)
 }
 
