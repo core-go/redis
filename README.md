@@ -1,7 +1,7 @@
 # Redis Client
 - Redis Client Utilities, support 2 libraries [redigo/redis](https://github.com/gomodule/redigo) and [redis/go-redis](https://github.com/redis/go-redis) (v6, v8, v9)
 - Redis Health Check
-- Implement CacheAdapter (Memory Cache), which is the implementation of the belowinterface:
+- Implement CacheAdapter (Memory Cache), which is the implementation of the below interface:
 ```go
 package cache
 
